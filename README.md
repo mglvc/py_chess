@@ -1,2 +1,1 @@
-# py_chess
-script for working with chess engines
+функции, которые помогут при работе с шахматными движками
