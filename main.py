@@ -32,12 +32,21 @@ def play_dual_game(engine1, engine2, first_starts=True):
         moves_list.append(board.san(result.move))
         board.push(result.move)
         first_starts = not first_starts
-    if first_starts:
+    #moves_list.append(result.move)
+    mov_list_rev = moves_list[::-1]
+    if str(moves_list[-1])[-1] != "#" or str(moves_list[-1])[::-1][:2] != "++" or (mov_list_rev[0] == mov_list_rev[4] == mov_list_rev[8] and
+        mov_list_rev[1] == mov_list_rev[5] == mov_list_rev[9] and
+         mov_list_rev[2] == mov_list_rev[6] == mov_list_rev[10] and
+         mov_list_rev[3] == mov_list_rev[7] == mov_list_rev[11]):
+
+        winner = 0.5
+    elif first_starts:
         winner = 2
     else:
         winner = 1
     print_pgn(moves_list)
     return winner
+
   
 def check_move(right_moves, right_position, engine):
     T_F_moves = []
