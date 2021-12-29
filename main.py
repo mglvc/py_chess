@@ -99,12 +99,18 @@ def test_engine():
             engine2 = chess.engine.SimpleEngine.popen_uci(["engine/lc0.exe"])
             engine2.configure({"WeightsFile": maia[j]})
             goal = ''
-            if play_dual_game(engine1, engine2) == 1:
+            g1 = play_dual_game(engine1, engine2)
+            g2 = play_dual_game(engine2, engine1)
+            if g1 == 1:
                 goal += "1"
+            elif g1 == 0.5:
+                goal += "0.5"
             else:
                 goal += "0"
-            if play_dual_game(engine2, engine1) == 2:
+            if g2 == 2:
                 goal += "1"
+            elif g2 == 0.5:
+                goal += "0.5"
             else:
                 goal += "0"
 
