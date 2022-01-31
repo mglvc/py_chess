@@ -120,3 +120,150 @@ def test_engine():
         list_win.append(l1)
     print(len(list_win)-1)
     return list_win
+
+def check_users_moves_whites(right_moves, right_position, engine):
+    #print(right_moves)
+    i, j = 5, 0
+    TF = 0
+    while j < len(right_position) and i < len(right_moves):
+        board = chess.Board(right_position[j])
+        game = chess.pgn.Game()
+        game.from_board(board)
+        result = engine.play(board, chess.engine.Limit(depth=1, nodes=1))
+        board.push(result.move)
+        move_1 = str(board.move_stack[0])
+        rm = right_moves[i]
+            #print(move_1, rm)
+        if move_1 == str(rm):
+            TF += 1
+            #print(TF, move_1, rm)
+
+        if j == len(right_position) - 1:
+            print(board.move_stack)
+        j, i = j + 2, i + 2
+    #print(TF)
+    return TF
+
+
+def check_users_moves_blacks(right_moves, right_position, engine):
+    #print(right_moves)
+    i, j = 6, 1
+    TF = 0
+    while j < len(right_position) and i < len(right_moves):
+        board = chess.Board(right_position[j])
+        game = chess.pgn.Game()
+        game.from_board(board)
+        result = engine.play(board, chess.engine.Limit(depth=1, nodes=1))
+        board.push(result.move)
+        move_1 = str(board.move_stack[0])
+        rm = right_moves[i]
+        #print(move_1, rm)
+        if move_1 == str(rm):
+            TF += 1
+            #print(TF, move_1, rm)
+        if j == len(right_position) - 1:
+            print(board.move_stack)
+        j, i = j + 2, i + 2
+    #print(TF)
+    return TF
+
+def take_moves_from_pgn(pgn):
+    games = [[]]
+    pgn_open = open(pgn)
+    i = 0
+    first_game = chess.pgn.read_game(pgn_open)
+    while first_game and i < 20000:
+         if first_game.headers["Event"] == "Rated Classical game":
+            if first_game.headers["Termination"] == "Normal":
+                i += 1
+                    #print(i)
+                board = first_game.board()
+                wh, wh_elo = first_game.headers["White"], first_game.headers["WhiteElo"]
+                bl, bl_elo= first_game.headers["Black"], first_game.headers['BlackElo']
+                    #print(i, wh, wh_elo, bl, bl_elo)
+                moves = [i, wh, wh_elo, bl, bl_elo]
+                for move in first_game.mainline_moves():
+                    moves.append(move)
+                    board.push(move)
+                    #games.append(list(moves))
+                arr = make_fen_from_movelist(moves)
+                l1, l2 = analyse_users_engine(moves, arr)
+                games.append(l1)
+                games.append(l2)
+         first_game = chess.pgn.read_game(pgn_open)
+    df = pd.DataFrame(games[1:], columns = ['game id', 'nickname', 'elo rating', 'side', 'all moves', 'moves by gamer', '1400', '1500', '1600', '1700', '1800', '1900'])
+    return df
+
+
+def make_fen_from_movelist(movelist):
+    fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+    fen_board = []
+    fen_board.append(fen)
+    board = chess.Board(fen)
+    game = chess.pgn.Game()
+    game.from_board(board)
+    for j in range(5, len(movelist)):
+        board.push(movelist[j])
+        arr = (str(board.fen).split("\'"))
+        #print(arr[1])
+        fen_arr = str(arr[1])
+        fen_board.append(fen_arr)
+    return fen_board
+
+
+def analyse_users_engine(moves, positions):
+    maia = ["""D:\mglvc\AnalyseRating\weights\\maia-1400.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1500.pb.gz""",
+            """D:\mglvc\AnalyseRating\weights\\maia-1600.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1700.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1800.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1900.pb.gz"""]
+    if len(moves) - 5 % 2 == 0:
+        num_moves_wh = (len(moves) - 5) // 2
+        num_moves_bl = num_moves_wh
+    else:
+        num_moves_wh = (len(moves) - 5) // 2 + 1
+        num_moves_bl = num_moves_wh - 1
+    print(num_moves_wh, num_moves_bl, len(moves)-5)
+    listing_1 = [moves[0], moves[1], moves[2], "white", len(moves) - 5, num_moves_wh]
+    listing_2 =  [moves[0], moves[3], moves[4], "black", len(moves) - 5, num_moves_bl]
+
+    for j in range(len(maia)):
+        engine3 = chess.engine.SimpleEngine.popen_uci(["engine/lc0.exe"])
+        engine3.configure({"WeightsFile": maia[j]})
+        engine4 = chess.engine.SimpleEngine.popen_uci(["engine/lc0.exe"])
+        engine4.configure({"WeightsFile": maia[j]})
+        eq = check_users_moves_whites(moves, positions, engine3)
+        eq_b = check_users_moves_blacks(moves, positions, engine4)
+        listing_2.append(str(eq_b))
+        listing_1.append(str(eq))
+        engine3.quit()
+        engine4.quit()
+
+    l1 = []
+    l2 = []
+    for i in range(1400, 2000, 100): #стокфиш
+        engine1 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish11.exe"])
+        engine1.configure({"UCI_elo": i})
+        eq = check_users_moves_whites(moves, positions, engine1)
+        engine1.quit()
+        engine2 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish11.exe"])
+        engine2.configure({"UCI_elo": i})
+        eq_b = check_users_moves_blacks(moves, positions, engine2)
+        print(eq_b)
+        l2.append(str(eq_b))
+        l1.append(str(eq))
+        engine2.quit()
+
+    listing_1[6] = str(listing_1[6]) + " " + str(l1[0])
+    listing_1[7] = str(listing_1[7]) + " " + str(l1[1])
+    listing_1[8] = str(listing_1[8]) + " " + str(l1[2])
+    listing_1[9] = str(listing_1[9]) + " " + str(l1[3])
+    listing_1[10] = str(listing_1[10]) + " " + str(l1[4])
+    listing_1[11] = str(listing_1[11]) + " " + str(l1[5])
+
+
+    listing_2[6] = str(listing_2[6]) + " " + str(l2[0])
+    listing_2[7] = str(listing_2[7]) + " " + str(l2[1])
+    listing_2[8] = str(listing_2[8]) + " " + str(l2[2])
+    listing_2[9] = str(listing_2[9]) + " " + str(l2[3])
+    listing_2[10] = str(listing_2[10]) + " " + str(l2[4])
+    listing_2[11] = str(listing_2[11]) + " " + str(l2[5])
+
+    return listing_1, listing_2
