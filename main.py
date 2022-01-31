@@ -212,18 +212,26 @@ def make_fen_from_movelist(movelist):
 
 
 def analyse_users_engine(moves, positions):
-    maia = ["""D:\mglvc\AnalyseRating\weights\\maia-1400.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1500.pb.gz""",
-            """D:\mglvc\AnalyseRating\weights\\maia-1600.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1700.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1800.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1900.pb.gz"""]
+
     if len(moves) - 5 % 2 == 0:
         num_moves_wh = (len(moves) - 5) // 2
         num_moves_bl = num_moves_wh
     else:
         num_moves_wh = (len(moves) - 5) // 2 + 1
         num_moves_bl = num_moves_wh - 1
-    print(num_moves_wh, num_moves_bl, len(moves)-5)
-    listing_1 = [moves[0], moves[1], moves[2], "white", len(moves) - 5, num_moves_wh]
-    listing_2 =  [moves[0], moves[3], moves[4], "black", len(moves) - 5, num_moves_bl]
 
+    listing_1, listing_2 = test_by_maya(moves, positions, num_moves_wh, num_moves_bl)
+    l1, l2 = test_by_stockfish(moves, positions, num_moves_wh, num_moves_bl)
+    listing_1 = concate_lists(listing_1, l1)
+    listing_2 = concate_lists(listing_2, l2)
+    return listing_1, listing_2
+
+
+def test_by_maya(moves, positions, num_moves_wh, num_moves_bl):
+    maia = ["""D:\mglvc\AnalyseRating\weights\\maia-1400.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1500.pb.gz""",
+            """D:\mglvc\AnalyseRating\weights\\maia-1600.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1700.pb.gz""",
+            """D:\mglvc\AnalyseRating\weights\\maia-1800.pb.gz""", """D:\mglvc\AnalyseRating\weights\\maia-1900.pb.gz"""]
+    listing_1, listing_2 = [moves[0], moves[1], moves[2], "white", len(moves) - 5, num_moves_wh], [moves[0], moves[3], moves[4], "black", len(moves) - 5, num_moves_bl]
     for j in range(len(maia)):
         engine3 = chess.engine.SimpleEngine.popen_uci(["engine/lc0.exe"])
         engine3.configure({"WeightsFile": maia[j]})
@@ -235,34 +243,32 @@ def analyse_users_engine(moves, positions):
         listing_1.append(str(eq))
         engine3.quit()
         engine4.quit()
+    return listing_1, listing_2
 
-    l1 = []
-    l2 = []
+
+def test_by_stockfish(moves, positions, num_moves_wh, num_moves_bl):
+    l1, l2 = [], []
     for i in range(1400, 2000, 100): #стокфиш
-        engine1 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish11.exe"])
+        engine1 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish_22012908_x64"])
         engine1.configure({"UCI_elo": i})
         eq = check_users_moves_whites(moves, positions, engine1)
         engine1.quit()
-        engine2 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish11.exe"])
+        engine2 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish_22012908_x64"])
         engine2.configure({"UCI_elo": i})
         eq_b = check_users_moves_blacks(moves, positions, engine2)
         l2.append(str(eq_b))
         l1.append(str(eq))
         engine2.quit()
+    return l1, l2
 
+def concate_lists(listing_1, l1):
     listing_1[6] = str(listing_1[6]) + " " + str(l1[0])
     listing_1[7] = str(listing_1[7]) + " " + str(l1[1])
     listing_1[8] = str(listing_1[8]) + " " + str(l1[2])
     listing_1[9] = str(listing_1[9]) + " " + str(l1[3])
     listing_1[10] = str(listing_1[10]) + " " + str(l1[4])
     listing_1[11] = str(listing_1[11]) + " " + str(l1[5])
+    return listing_1
 
-
-    listing_2[6] = str(listing_2[6]) + " " + str(l2[0])
-    listing_2[7] = str(listing_2[7]) + " " + str(l2[1])
-    listing_2[8] = str(listing_2[8]) + " " + str(l2[2])
-    listing_2[9] = str(listing_2[9]) + " " + str(l2[3])
-    listing_2[10] = str(listing_2[10]) + " " + str(l2[4])
-    listing_2[11] = str(listing_2[11]) + " " + str(l2[5])
 
     return listing_1, listing_2
