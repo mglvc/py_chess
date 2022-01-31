@@ -212,7 +212,6 @@ def make_fen_from_movelist(movelist):
 
 
 def analyse_users_engine(moves, positions):
-
     if len(moves) - 5 % 2 == 0:
         num_moves_wh = (len(moves) - 5) // 2
         num_moves_bl = num_moves_wh
