@@ -246,7 +246,6 @@ def analyse_users_engine(moves, positions):
         engine2 = chess.engine.SimpleEngine.popen_uci(["D:\mglvc\AnalyseRating\engine\stockfish11.exe"])
         engine2.configure({"UCI_elo": i})
         eq_b = check_users_moves_blacks(moves, positions, engine2)
-        print(eq_b)
         l2.append(str(eq_b))
         l1.append(str(eq))
         engine2.quit()
